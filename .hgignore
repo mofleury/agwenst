@@ -1,0 +1,29 @@
+# For Idea projects
+syntax: glob
+.idea
+*.iml
+*.ipr
+*.iws
+*/target/*
+.factorypath
+
+Android/local.properties
+Android/build/
+Android/gen/
+Android/app/build/
+Android/app/gen/
+Android/.gradle/
+Android/gladle/
+*.orig
+
+syntax: regexp
+
+# eclipse and maven stuff
+\.classpath$
+\.project$
+\.settings/
+^target
+
+\.DS_Store$
+
+mongo_data
