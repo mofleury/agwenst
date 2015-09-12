@@ -77,14 +77,18 @@ public class ConsoleUI {
 
 		this.game = game;
 
-		console.setPrompt(game.getCurrentPlayer()
-				.getName() + " > ");
-
 		try {
 			console.println("Welcome! type 'help' for directions");
+
+			displayField();
+
 			console.flush();
 
 			while (!cancelRequested) {
+
+				console.setPrompt(game.getCurrentPlayer()
+						.getName() + " > ");
+
 				String input = console.readLine();
 				if (input == null) {
 					// exit requested
@@ -100,6 +104,20 @@ public class ConsoleUI {
 				} else {
 					console.println("Don't know what to do with '" + input + "'");
 				}
+
+				if (game.gameOver()) {
+					console.print("Game Complete, ");
+					if (game.getWinner()
+							.isPresent()) {
+						console.println("the winner is " + game.getWinner()
+								.get()
+								.getName() + "!");
+					} else {
+						console.print("it's a draw!");
+					}
+					break;
+				}
+
 				console.flush();
 			}
 
@@ -151,9 +169,6 @@ public class ConsoleUI {
 
 		out.clearScreen();
 
-		console.setPrompt(game.getCurrentPlayer()
-				.getName() + " > ");
-
 		displayField();
 
 	}
@@ -164,10 +179,9 @@ public class ConsoleUI {
 
 		Map<Player, Integer> scores = game.computeScores();
 
-		out.println("<" + game.getHands()
-				.get(game.getOtherPlayer())
-				.getCards()
-				.size() + ">---------( " + scores.get(game.getOtherPlayer()) + " )-------------");
+		out.println(playerStatus(game.getOtherPlayer()));
+
+		out.println("----------( " + scores.get(game.getOtherPlayer()) + " )-------------");
 
 		iterate(Game.ROW_COUNT - 1, i -> i - 1).limit(Game.ROW_COUNT)
 				.forEach(r -> {
@@ -179,11 +193,19 @@ public class ConsoleUI {
 			printRow(game.getCurrentPlayer(), rows, r);
 		});
 
-		out.println("<" + game.getHands()
-				.get(game.getCurrentPlayer())
-				.getCards()
-				.size() + ">---------( " + scores.get(game.getCurrentPlayer()) + " )-------------");
+		out.println("----------( " + scores.get(game.getCurrentPlayer()) + " )-------------");
 
+		out.println(playerStatus(game.getCurrentPlayer()));
+	}
+
+	private String playerStatus(Player p) {
+		return p.getName() + " " + game.getVictories()
+				.get(p) + " <"
+				+ game.getHands()
+						.get(p)
+						.getCards()
+						.size()
+				+ ">";
 	}
 
 	private void printRow(Player player, Map<Player, List<Row>> rows, int r) {
@@ -202,7 +224,8 @@ public class ConsoleUI {
 				.stream()
 				.forEach(p -> {
 					out.println(p.getName() + " : " + game.getVictories()
-							.get(p));
+							.get(p)
+							.intValue());
 				});
 	}
 

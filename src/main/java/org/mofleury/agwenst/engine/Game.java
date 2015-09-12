@@ -7,10 +7,13 @@ import static java.util.stream.IntStream.range;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Random;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import org.mofleury.agwenst.domain.live.Deck;
 import org.mofleury.agwenst.domain.live.EngagedCard;
@@ -32,7 +35,9 @@ public class Game {
 
 	private final Random rand;
 
-	private final Map<Player, Integer> victories;
+	private final Map<Player, AtomicInteger> victories;
+	private final AtomicInteger roundCounter;
+	private Optional<Player> winner;
 
 	private final Player player1;
 	private final Player player2;
@@ -57,7 +62,9 @@ public class Game {
 		players = Arrays.asList(player1, player2);
 
 		victories = players.stream()
-				.collect(toMap(p -> p, p -> 0));
+				.collect(toMap(p -> p, p -> new AtomicInteger(0)));
+		roundCounter = new AtomicInteger(0);
+		winner = Optional.empty();
 
 		passed = players.stream()
 				.collect(toMap(p -> p, p -> false));
@@ -70,10 +77,14 @@ public class Game {
 
 		prepareDecksAndHands(initialDecks);
 
-		rows = players.stream()
+		rows = buildRows();
+
+	}
+
+	private Map<Player, List<Row>> buildRows() {
+		return players.stream()
 				.collect(toMap(p -> p, p -> range(0, 3).mapToObj(i -> new Row())
 						.collect(toList())));
-
 	}
 
 	private void prepareDecksAndHands(Map<Player, InitialDeck> initialDecks) {
@@ -107,7 +118,13 @@ public class Game {
 				.getCards()
 				.add(new EngagedCard(card));
 
-		swapPlayerIfNeeded();
+		if (hands.get(currentPlayer)
+				.getCards()
+				.isEmpty()) {
+			pass();
+		} else {
+			swapPlayerIfNeeded();
+		}
 	}
 
 	private void swapPlayerIfNeeded() {
@@ -143,6 +160,43 @@ public class Game {
 
 	public void pass() {
 		passed.put(currentPlayer, true);
+
+		if (passed.values()
+				.stream()
+				.allMatch(passed -> passed == true)) {
+			endRound();
+		}
+
 		swapPlayerIfNeeded();
+	}
+
+	private void endRound() {
+
+		roundCounter.incrementAndGet();
+
+		Optional<Player> roundWinner = computeScores().entrySet()
+				.stream()
+				.max(Comparator.comparing(e -> e.getValue()))
+				.map(e -> e.getKey());
+
+		roundWinner.ifPresent(p -> {
+			victories.get(p)
+					.incrementAndGet();
+		});
+
+		if ((roundCounter.get() == 3) || victories.values()
+				.stream()
+				.anyMatch(v -> v.get() == 2)) {
+			this.winner = roundWinner;
+		} else {
+			rows.clear();
+			rows.putAll(buildRows());
+
+			passed.replaceAll((p, b) -> false);
+		}
+	}
+
+	public boolean gameOver() {
+		return winner.isPresent() || (roundCounter.get() == 3);
 	}
 }
