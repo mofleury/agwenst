@@ -72,7 +72,7 @@ public class ConsoleUI {
 				.map(Command::getName)
 				.collect(toList())));
 
-		console.setPrompt(">");
+		console.setPrompt("> ");
 	}
 
 	public void run(Game game) {
@@ -96,9 +96,9 @@ public class ConsoleUI {
 				Optional<Command> c = Command.forInput(input.trim());
 				if (c.isPresent()) {
 					c.get()
-							.execute(console, this, Command.extractArguments(input.trim()));
+							.execute(console, this, input);
 				} else {
-					console.println("Don't know anything about '" + input + "'");
+					console.println("Don't know what to do with '" + input + "'");
 				}
 				console.flush();
 			}
@@ -155,28 +155,25 @@ public class ConsoleUI {
 
 		iterate(Game.ROW_COUNT - 1, i -> i - 1).limit(Game.ROW_COUNT)
 				.forEach(r -> {
-					rows.get(player2)
-							.get(r)
-							.getCards()
-							.forEach(c -> out.print(c.getCard()
-									.getName() + "(" + c.getCurrentValue() + ")"));
-					out.println("-------------");
+					printRow(player2, rows, r);
 				});
-		out.println();
 		out.println("---------------------------");
 
 		range(0, Game.ROW_COUNT).forEach(r -> {
-			rows.get(player1)
-					.get(r)
-					.getCards()
-					.forEach(c -> out.print(c.getCard()
-							.getName() + "(" + c.getCurrentValue() + ") "));
-			out.println();
-			out.println("-------------");
+			printRow(player1, rows, r);
 		});
 
-		out.println();
 		out.println("---------------------------");
 
+	}
+
+	private void printRow(Player player, Map<Player, List<Row>> rows, int r) {
+		out.print("" + (r + 1) + "|");
+		rows.get(player)
+				.get(r)
+				.getCards()
+				.forEach(c -> out.print(c.getCard()
+						.getName() + "(" + c.getCurrentValue() + ")"));
+		out.println("");
 	}
 }

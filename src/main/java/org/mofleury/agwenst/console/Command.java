@@ -1,6 +1,7 @@
 package org.mofleury.agwenst.console;
 
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.Optional;
 
 import jline.console.ConsoleReader;
@@ -11,9 +12,9 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public enum Command {
 
-	HELP("help", "", "Displays available commands") {
+	HELP("help", "", "Displays available commands", 0) {
 		@Override
-		public void execute(ConsoleReader console, ConsoleUI ui, String[] arguments) throws IOException {
+		public void doExecute(ConsoleReader console, ConsoleUI ui, String[] arguments) throws IOException {
 			console.println("available commands:");
 			for (Command c : values()) {
 				console.print("\t");
@@ -25,35 +26,40 @@ public enum Command {
 			}
 		}
 	},
-	DIPLAY_FIELD("field", "", "Displays game field") {
+	DIPLAY_FIELD("field", "", "Displays game field", 0) {
 		@Override
-		public void execute(ConsoleReader console, ConsoleUI ui, String[] arguments) throws IOException {
+		public void doExecute(ConsoleReader console, ConsoleUI ui, String[] arguments) throws IOException {
 			ui.displayField();
 		}
 	},
-	DISPLAY_HAND("hand", "", "Displays your hand") {
+	DISPLAY_HAND("hand", "", "Displays your hand", 0) {
 		@Override
-		public void execute(ConsoleReader console, ConsoleUI ui, String[] arguments) throws IOException {
+		public void doExecute(ConsoleReader console, ConsoleUI ui, String[] arguments) throws IOException {
 			ui.displayHand();
 		}
 	},
-	PLAY_CARD("play", "<card index> <target row>", "Plays a card") {
+	PLAY_CARD("play", "<card index> <target row>", "Plays a card", 2) {
 
 		@Override
-		public void execute(ConsoleReader console, ConsoleUI ui, String[] arguments) throws IOException {
+		public void doExecute(ConsoleReader console, ConsoleUI ui, String[] arguments) throws IOException {
 
 			if (arguments.length != 2) {
-				console.println("Cannot understand arguments " + arguments);
+				console.println("Cannot understand arguments " + Arrays.toString(arguments));
+				return;
 			}
 			int cardIndex = Integer.valueOf(arguments[0]);
 			int targetRow = Integer.valueOf(arguments[1]);
 
-			ui.playCard(cardIndex, targetRow);
+			try {
+				ui.playCard(cardIndex, targetRow - 1);
+			} catch (IndexOutOfBoundsException e) {
+				console.println("invalid row or card id");
+			}
 		}
 	},
-	EXIT("exit", "", "Exits the game") {
+	EXIT("exit", "", "Exits the game", 0) {
 		@Override
-		public void execute(ConsoleReader console, ConsoleUI ui, String[] arguments) throws IOException {
+		public void doExecute(ConsoleReader console, ConsoleUI ui, String[] arguments) throws IOException {
 			ui.quit();
 		}
 	};
@@ -61,26 +67,35 @@ public enum Command {
 	private final String name;
 	private final String usagePostfix;
 	private final String description;
+	private final int argCount;
 
-	public abstract void execute(ConsoleReader console, ConsoleUI ui, String[] arguments) throws IOException;
+	abstract void doExecute(ConsoleReader console, ConsoleUI ui, String[] arguments) throws IOException;
 
-	public static Optional<Command> forInput(String name) {
+	public void execute(ConsoleReader console, ConsoleUI ui, String input) throws IOException {
+		doExecute(console, ui, extractArguments(input));
+	}
+
+	public static Optional<Command> forInput(String input) {
 		for (Command c : values()) {
-			if (name.startsWith(c.getName())) {
-				return Optional.of(c);
+			if (input.startsWith(c.getName())) {
+				String[] arguments = extractArguments(input);
+				if (arguments.length == c.getArgCount()) {
+					return Optional.of(c);
+				}
 			}
 		}
 		return Optional.empty();
 	}
 
-	public static String[] extractArguments(String input){
+	public static String[] extractArguments(String input) {
 
 		int spaceIndex = input.indexOf(' ');
-		if(spaceIndex > 0){
+		if (spaceIndex > 0) {
 			String remaining = input.substring(spaceIndex);
-			return remaining.trim().split("\\s+");
+			return remaining.trim()
+					.split("\\s+");
 		}
-		return new String[]{};
+		return new String[] {};
 
 	}
 }
