@@ -43,6 +43,14 @@ public class ConsoleUI {
 				e.printStackTrace();
 			}
 		}
+
+		public void clearScreen() {
+			try {
+				delegate.clearScreen();
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+		}
 	}
 
 	private static final Comparator<? super Card> HAND_SORTER = Comparator.comparingInt(Card::getValue)
@@ -52,7 +60,6 @@ public class ConsoleUI {
 	private final ExceptionCatchingConsole out;
 
 	private Game game;
-	private Player currentPlayer;
 
 	private boolean cancelRequested = false;
 
@@ -64,13 +71,14 @@ public class ConsoleUI {
 				.map(Command::getName)
 				.collect(toList())));
 
-		console.setPrompt("> ");
 	}
 
 	public void run(Game game) {
 
 		this.game = game;
-		this.currentPlayer = game.getPlayer1();
+
+		console.setPrompt(game.getCurrentPlayer()
+				.getName() + " > ");
 
 		try {
 			console.println("Welcome! type 'help' for directions");
@@ -119,7 +127,7 @@ public class ConsoleUI {
 		AtomicInteger index = new AtomicInteger(0);
 
 		return game.getHands()
-				.get(currentPlayer)
+				.get(game.getCurrentPlayer())
 				.getCards()
 				.stream()
 				.sorted(HAND_SORTER)
@@ -134,30 +142,20 @@ public class ConsoleUI {
 		if (card == null) {
 			throw new IndexOutOfBoundsException("No card at index " + cardIndex);
 		}
-		game.playCard(currentPlayer, card, targetRow);
+		game.playCard(game.getCurrentPlayer(), card, targetRow);
 
 		swapPlayers();
 	}
 
 	private void swapPlayers() {
-		currentPlayer = otherPlayer();
 
-		try {
-			console.clearScreen();
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
+		out.clearScreen();
+
+		console.setPrompt(game.getCurrentPlayer()
+				.getName() + " > ");
 
 		displayField();
 
-	}
-
-	private Player otherPlayer() {
-		if (currentPlayer == game.getPlayer1()) {
-			return game.getPlayer2();
-		} else {
-			return game.getPlayer1();
-		}
 	}
 
 	public void displayField() {
@@ -166,19 +164,25 @@ public class ConsoleUI {
 
 		Map<Player, Integer> scores = game.computeScores();
 
-		out.println("----------( " + scores.get(otherPlayer()) + " )-------------");
+		out.println("<" + game.getHands()
+				.get(game.getOtherPlayer())
+				.getCards()
+				.size() + ">---------( " + scores.get(game.getOtherPlayer()) + " )-------------");
 
 		iterate(Game.ROW_COUNT - 1, i -> i - 1).limit(Game.ROW_COUNT)
 				.forEach(r -> {
-					printRow(otherPlayer(), rows, r);
+					printRow(game.getOtherPlayer(), rows, r);
 				});
-		out.println("---------------------------");
+		out.println("------------------------------");
 
 		range(0, Game.ROW_COUNT).forEach(r -> {
-			printRow(currentPlayer, rows, r);
+			printRow(game.getCurrentPlayer(), rows, r);
 		});
 
-		out.println("----------( " + scores.get(currentPlayer) + " )-------------");
+		out.println("<" + game.getHands()
+				.get(game.getCurrentPlayer())
+				.getCards()
+				.size() + ">---------( " + scores.get(game.getCurrentPlayer()) + " )-------------");
 
 	}
 
@@ -190,5 +194,21 @@ public class ConsoleUI {
 				.forEach(c -> out.print(c.getCard()
 						.getName() + "(" + c.getCurrentValue() + ") "));
 		out.println("");
+	}
+
+	public void displayStatus() {
+		out.println("Victories: ");
+		game.getPlayers()
+				.stream()
+				.forEach(p -> {
+					out.println(p.getName() + " : " + game.getVictories()
+							.get(p));
+				});
+	}
+
+	public void pass() {
+		game.pass();
+		out.clearScreen();
+		displayField();
 	}
 }

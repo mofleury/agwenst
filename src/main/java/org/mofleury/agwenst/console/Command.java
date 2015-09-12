@@ -57,6 +57,18 @@ public enum Command {
 			}
 		}
 	},
+	PASS("pass", "", "Pass for this round", 0){
+		@Override
+		void doExecute(ConsoleReader console, ConsoleUI ui, String[] arguments) throws IOException {
+			ui.pass();
+		}
+	},
+	STATUS("status", "", "Displays global status", 0) {
+		@Override
+		public void doExecute(ConsoleReader console, ConsoleUI ui, String[] arguments) throws IOException {
+			ui.displayStatus();
+		}
+	},
 	EXIT("exit", "", "Exits the game", 0) {
 		@Override
 		public void doExecute(ConsoleReader console, ConsoleUI ui, String[] arguments) throws IOException {

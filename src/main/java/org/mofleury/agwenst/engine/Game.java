@@ -32,6 +32,8 @@ public class Game {
 
 	private final Random rand;
 
+	private final Map<Player, Integer> victories;
+
 	private final Player player1;
 	private final Player player2;
 	private final List<Player> players;
@@ -41,12 +43,24 @@ public class Game {
 
 	private final Map<Player, List<Row>> rows;
 
+	private Player currentPlayer;
+	private final Map<Player, Boolean> passed;
+
 	public Game(long seed, Player player1, Player player2, Map<Player, InitialDeck> initialDecks) {
 		rand = new Random(seed);
 
 		this.player1 = player1;
 		this.player2 = player2;
+
+		currentPlayer = rand.nextDouble() < 0.5 ? player1 : player2;
+
 		players = Arrays.asList(player1, player2);
+
+		victories = players.stream()
+				.collect(toMap(p -> p, p -> 0));
+
+		passed = players.stream()
+				.collect(toMap(p -> p, p -> false));
 
 		decks = players.stream()
 				.collect(toMap(p -> p, p -> new Deck()));
@@ -92,6 +106,14 @@ public class Game {
 				.get(targetRow)
 				.getCards()
 				.add(new EngagedCard(card));
+
+		swapPlayerIfNeeded();
+	}
+
+	private void swapPlayerIfNeeded() {
+		if (passed.get(getOtherPlayer()) == false) {
+			currentPlayer = getOtherPlayer();
+		}
 	}
 
 	public Map<Player, Integer> computeScores() {
@@ -111,4 +133,16 @@ public class Game {
 		return scores;
 	}
 
+	public Player getOtherPlayer() {
+		if (currentPlayer == player1) {
+			return player2;
+		} else {
+			return player1;
+		}
+	}
+
+	public void pass() {
+		passed.put(currentPlayer, true);
+		swapPlayerIfNeeded();
+	}
 }
