@@ -12,54 +12,73 @@
 
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-		<maven.compile.sources>1.8</maven.compile.sources>
-		<maven.compile.target>1.8</maven.compile.target>
 	</properties>
 
 	<dependencies>
+
+		<dependency>
+			<groupId>jline</groupId>
+			<artifactId>jline</artifactId>
+			<version>2.13</version>
+		</dependency>
+
 		<dependency>
 			<groupId>junit</groupId>
 			<artifactId>junit</artifactId>
-			<version>3.8.1</version>
+			<version>4.12</version>
 			<scope>test</scope>
 		</dependency>
+
+		<dependency>
+			<groupId>org.projectlombok</groupId>
+			<artifactId>lombok</artifactId>
+			<version>1.16.6</version>
+			<scope>provided</scope>
+		</dependency>
+
 	</dependencies>
 
 	<build>
 		<plugins>
 			<plugin>
-				<artifactId>maven-compiler-plugin</artifactId>
-				<version>3.1</version>
+				<groupId>org.codehaus.mojo</groupId>
+				<artifactId>exec-maven-plugin</artifactId>
+				<version>1.1</version>
+				<configuration>
+					<executable>java</executable>
+					<arguments>
+						<argument>-classpath</argument>
+						<classpath />
+						<argument>org.mofleury.agwenst.App</argument>
+					</arguments>
+				</configuration>
+			</plugin>
+
+			<plugin>
+				<groupId>org.codehaus.mojo</groupId>
+				<artifactId>appassembler-maven-plugin</artifactId>
+				<version>1.8.1</version>
+				<configuration>
+					<programs>
+						<program>
+							<mainClass>org.mofleury.agwenst.App</mainClass>
+							<id>app</id>
+						</program>
+					</programs>
+				</configuration>
 				<executions>
 					<execution>
-						<id>default-testCompile</id>
-						<phase>test-compile</phase>
+						<phase>package</phase>
 						<goals>
-							<goal>testCompile</goal>
+							<goal>assemble</goal>
 						</goals>
-						<configuration>
-							<source>1.8</source>
-							<target>1.8</target>
-							<optimize>true</optimize>
-							<showWarnings>true</showWarnings>
-							<showDeprecation>true</showDeprecation>
-						</configuration>
-					</execution>
-					<execution>
-						<id>default-compile</id>
-						<phase>compile</phase>
-						<goals>
-							<goal>compile</goal>
-						</goals>
-						<configuration>
-							<source>1.8</source>
-							<target>1.8</target>
-							<optimize>true</optimize>
-							<showWarnings>true</showWarnings>
-							<showDeprecation>true</showDeprecation>
-						</configuration>
 					</execution>
 				</executions>
+			</plugin>
+
+			<plugin>
+				<artifactId>maven-compiler-plugin</artifactId>
+				<version>3.1</version>
 				<configuration>
 					<source>1.8</source>
 					<target>1.8</target>
