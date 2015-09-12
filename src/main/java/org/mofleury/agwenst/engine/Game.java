@@ -7,6 +7,7 @@ import static java.util.stream.IntStream.range;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
@@ -91,6 +92,23 @@ public class Game {
 				.get(targetRow)
 				.getCards()
 				.add(new EngagedCard(card));
+	}
+
+	public Map<Player, Integer> computeScores() {
+
+		Map<Player, Integer> scores = new HashMap<>();
+		rows.forEach((p, rs) -> {
+			int total = rs.stream()
+					.map(r -> r.getCards()
+							.stream()
+							.mapToInt(EngagedCard::getCurrentValue)
+							.sum())
+					.mapToInt(Integer::intValue)
+					.sum();
+			scores.put(p, total);
+		});
+
+		return scores;
 	}
 
 }

@@ -151,7 +151,9 @@ public class ConsoleUI {
 		Player player2 = game.getPlayer2();
 		Map<Player, List<Row>> rows = game.getRows();
 
-		out.println("---------------------------");
+		Map<Player, Integer> scores = game.computeScores();
+
+		out.println("----------( " + scores.get(player2) + " )-------------");
 
 		iterate(Game.ROW_COUNT - 1, i -> i - 1).limit(Game.ROW_COUNT)
 				.forEach(r -> {
@@ -163,7 +165,7 @@ public class ConsoleUI {
 			printRow(player1, rows, r);
 		});
 
-		out.println("---------------------------");
+		out.println("----------( " + scores.get(player1) + " )-------------");
 
 	}
 
@@ -173,7 +175,7 @@ public class ConsoleUI {
 				.get(r)
 				.getCards()
 				.forEach(c -> out.print(c.getCard()
-						.getName() + "(" + c.getCurrentValue() + ")"));
+						.getName() + "(" + c.getCurrentValue() + ") "));
 		out.println("");
 	}
 }
