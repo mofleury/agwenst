@@ -12,6 +12,7 @@ import java.util.Map;
 import java.util.Random;
 
 import org.mofleury.agwenst.domain.live.Deck;
+import org.mofleury.agwenst.domain.live.EngagedCard;
 import org.mofleury.agwenst.domain.live.Hand;
 import org.mofleury.agwenst.domain.live.Row;
 import org.mofleury.agwenst.domain.still.Card;
@@ -77,6 +78,19 @@ public class Game {
 							.skip(INITIAL_HAND_SIZE)
 							.collect(toList()));
 		});
+	}
+
+	public void playCard(Player player, Card card, int targetRow) {
+		boolean found = hands.get(player)
+				.getCards()
+				.remove(card);
+		if (!found) {
+			throw new IllegalStateException("Player " + player + "does not have card " + card + " in his hand");
+		}
+		rows.get(player)
+				.get(targetRow)
+				.getCards()
+				.add(new EngagedCard(card));
 	}
 
 }

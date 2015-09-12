@@ -11,49 +11,76 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public enum Command {
 
-	HELP("help", "Displays available commands") {
+	HELP("help", "", "Displays available commands") {
 		@Override
-		public void execute(ConsoleReader console, ConsoleUI ui) throws IOException {
+		public void execute(ConsoleReader console, ConsoleUI ui, String[] arguments) throws IOException {
 			console.println("available commands:");
 			for (Command c : values()) {
 				console.print("\t");
 				console.print(c.getName());
+				console.print(" " + c.getUsagePostfix());
 				console.print(" : ");
 				console.print(c.getDescription());
 				console.println();
 			}
 		}
 	},
-	DIPLAY_FIELD("field", "Displays game field") {
+	DIPLAY_FIELD("field", "", "Displays game field") {
 		@Override
-		public void execute(ConsoleReader console, ConsoleUI ui) throws IOException {
+		public void execute(ConsoleReader console, ConsoleUI ui, String[] arguments) throws IOException {
 			ui.displayField();
 		}
 	},
-	DISPLAY_HAND("hand", "Displays your hand") {
+	DISPLAY_HAND("hand", "", "Displays your hand") {
 		@Override
-		public void execute(ConsoleReader console, ConsoleUI ui) throws IOException {
+		public void execute(ConsoleReader console, ConsoleUI ui, String[] arguments) throws IOException {
 			ui.displayHand();
 		}
 	},
-	EXIT("exit", "Exits the game") {
+	PLAY_CARD("play", "<card index> <target row>", "Plays a card") {
+
 		@Override
-		public void execute(ConsoleReader console, ConsoleUI ui) throws IOException {
+		public void execute(ConsoleReader console, ConsoleUI ui, String[] arguments) throws IOException {
+
+			if (arguments.length != 2) {
+				console.println("Cannot understand arguments " + arguments);
+			}
+			int cardIndex = Integer.valueOf(arguments[0]);
+			int targetRow = Integer.valueOf(arguments[1]);
+
+			ui.playCard(cardIndex, targetRow);
+		}
+	},
+	EXIT("exit", "", "Exits the game") {
+		@Override
+		public void execute(ConsoleReader console, ConsoleUI ui, String[] arguments) throws IOException {
 			ui.quit();
 		}
 	};
 
 	private final String name;
+	private final String usagePostfix;
 	private final String description;
 
-	public abstract void execute(ConsoleReader console, ConsoleUI ui) throws IOException;
+	public abstract void execute(ConsoleReader console, ConsoleUI ui, String[] arguments) throws IOException;
 
-	public static Optional<Command> forName(String name) {
+	public static Optional<Command> forInput(String name) {
 		for (Command c : values()) {
-			if (c.name.equals(name)) {
+			if (name.startsWith(c.getName())) {
 				return Optional.of(c);
 			}
 		}
 		return Optional.empty();
+	}
+
+	public static String[] extractArguments(String input){
+
+		int spaceIndex = input.indexOf(' ');
+		if(spaceIndex > 0){
+			String remaining = input.substring(spaceIndex);
+			return remaining.trim().split("\\s+");
+		}
+		return new String[]{};
+
 	}
 }

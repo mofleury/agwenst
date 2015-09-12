@@ -10,6 +10,8 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
 
 import org.mofleury.agwenst.domain.live.Row;
 import org.mofleury.agwenst.domain.still.Card;
@@ -91,10 +93,10 @@ public class ConsoleUI {
 						.isEmpty()) {
 					continue;
 				}
-				Optional<Command> c = Command.forName(input.trim());
+				Optional<Command> c = Command.forInput(input.trim());
 				if (c.isPresent()) {
 					c.get()
-							.execute(console, this);
+							.execute(console, this, Command.extractArguments(input.trim()));
 				} else {
 					console.println("Don't know anything about '" + input + "'");
 				}
@@ -115,15 +117,32 @@ public class ConsoleUI {
 
 	public void displayHand() throws IOException {
 		out.println("-------------------------");
-		game.getHands()
+		indexedPlayerHand().forEach((i, c) -> {
+			out.println(i + " - " + c.getName() + "(" + c.getValue() + ")");
+		});
+		out.println("-------------------------");
+	}
+
+	private Map<Integer, Card> indexedPlayerHand() {
+		AtomicInteger index = new AtomicInteger(0);
+
+		return game.getHands()
 				.get(currentPlayer)
 				.getCards()
 				.stream()
 				.sorted(HAND_SORTER)
-				.forEach(c -> {
-					out.println(c.getName() + "(" + c.getValue() + ")");
-				});
-		out.println("-------------------------");
+				.collect(Collectors.toMap(c -> index.incrementAndGet(), c -> c));
+	}
+
+	public void playCard(int cardIndex, int targetRow) throws IndexOutOfBoundsException {
+		if ((targetRow < 0) || (targetRow >= Game.ROW_COUNT)) {
+			throw new IndexOutOfBoundsException("Not a valid row " + targetRow);
+		}
+		Card card = indexedPlayerHand().get(cardIndex);
+		if (card == null) {
+			throw new IndexOutOfBoundsException("No card at index " + cardIndex);
+		}
+		game.playCard(currentPlayer, card, targetRow);
 	}
 
 	public void displayField() throws IOException {
@@ -141,12 +160,10 @@ public class ConsoleUI {
 							.getCards()
 							.forEach(c -> out.print(c.getCard()
 									.getName() + "(" + c.getCurrentValue() + ")"));
+					out.println("-------------");
 				});
-
-
 		out.println();
 		out.println("---------------------------");
-
 
 		range(0, Game.ROW_COUNT).forEach(r -> {
 			rows.get(player1)
@@ -154,6 +171,8 @@ public class ConsoleUI {
 					.getCards()
 					.forEach(c -> out.print(c.getCard()
 							.getName() + "(" + c.getCurrentValue() + ") "));
+			out.println();
+			out.println("-------------");
 		});
 
 		out.println();
