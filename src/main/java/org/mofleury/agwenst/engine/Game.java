@@ -18,9 +18,11 @@ import org.mofleury.agwenst.domain.still.Card;
 import org.mofleury.agwenst.domain.still.InitialDeck;
 import org.mofleury.agwenst.domain.still.Player;
 
+import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 
 @RequiredArgsConstructor
+@Getter
 public class Game {
 
 	public final static int ROW_COUNT = 3;
@@ -75,35 +77,6 @@ public class Game {
 							.skip(INITIAL_HAND_SIZE)
 							.collect(toList()));
 		});
-	}
-
-	public void displayHand(Player player){
-		System.out.println("-------------------------");
-		System.out.println(hands.get(player).getCards());
-		System.out.println("-------------------------");
-	}
-
-	public void displayField() {
-		System.out.println("---------------------------");
-
-		System.out.println(rows.get(player2)
-				.get(2));
-		System.out.println(rows.get(player2)
-				.get(1));
-		System.out.println(rows.get(player2)
-				.get(0));
-
-		System.out.println("---------------------------");
-
-		System.out.println(rows.get(player1)
-				.get(0));
-		System.out.println(rows.get(player1)
-				.get(1));
-		System.out.println(rows.get(player1)
-				.get(2));
-
-		System.out.println("---------------------------");
-
 	}
 
 }
