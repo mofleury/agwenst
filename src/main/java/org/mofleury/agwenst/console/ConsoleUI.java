@@ -43,14 +43,6 @@ public class ConsoleUI {
 				e.printStackTrace();
 			}
 		}
-
-		public void println() {
-			try {
-				delegate.println();
-			} catch (IOException e) {
-				e.printStackTrace();
-			}
-		}
 	}
 
 	private static final Comparator<? super Card> HAND_SORTER = Comparator.comparingInt(Card::getValue)
@@ -115,7 +107,7 @@ public class ConsoleUI {
 		cancelRequested = true;
 	}
 
-	public void displayHand() throws IOException {
+	public void displayHand() {
 		out.println("-------------------------");
 		indexedPlayerHand().forEach((i, c) -> {
 			out.println(i + " - " + c.getName() + "(" + c.getValue() + ")");
@@ -143,29 +135,50 @@ public class ConsoleUI {
 			throw new IndexOutOfBoundsException("No card at index " + cardIndex);
 		}
 		game.playCard(currentPlayer, card, targetRow);
+
+		swapPlayers();
 	}
 
-	public void displayField() throws IOException {
+	private void swapPlayers() {
+		currentPlayer = otherPlayer();
 
-		Player player1 = game.getPlayer1();
-		Player player2 = game.getPlayer2();
+		try {
+			console.clearScreen();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+
+		displayField();
+
+	}
+
+	private Player otherPlayer() {
+		if (currentPlayer == game.getPlayer1()) {
+			return game.getPlayer2();
+		} else {
+			return game.getPlayer1();
+		}
+	}
+
+	public void displayField() {
+
 		Map<Player, List<Row>> rows = game.getRows();
 
 		Map<Player, Integer> scores = game.computeScores();
 
-		out.println("----------( " + scores.get(player2) + " )-------------");
+		out.println("----------( " + scores.get(otherPlayer()) + " )-------------");
 
 		iterate(Game.ROW_COUNT - 1, i -> i - 1).limit(Game.ROW_COUNT)
 				.forEach(r -> {
-					printRow(player2, rows, r);
+					printRow(otherPlayer(), rows, r);
 				});
 		out.println("---------------------------");
 
 		range(0, Game.ROW_COUNT).forEach(r -> {
-			printRow(player1, rows, r);
+			printRow(currentPlayer, rows, r);
 		});
 
-		out.println("----------( " + scores.get(player1) + " )-------------");
+		out.println("----------( " + scores.get(currentPlayer) + " )-------------");
 
 	}
 
