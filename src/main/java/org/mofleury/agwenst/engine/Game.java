@@ -2,10 +2,8 @@ package org.mofleury.agwenst.engine;
 
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toMap;
-import static java.util.stream.IntStream.range;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -14,9 +12,7 @@ import java.util.Random;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.mofleury.agwenst.domain.live.Deck;
-import org.mofleury.agwenst.domain.live.EngagedCard;
 import org.mofleury.agwenst.domain.live.Hand;
-import org.mofleury.agwenst.domain.live.Row;
 import org.mofleury.agwenst.domain.still.Card;
 import org.mofleury.agwenst.domain.still.InitialDeck;
 import org.mofleury.agwenst.domain.still.Player;
@@ -35,30 +31,23 @@ public class Game {
 
 	private final Map<Player, AtomicInteger> victories;
 	private final AtomicInteger roundCounter;
-	private Optional<Player> winner;
 
-	private final Player player1;
-	private final Player player2;
 	private final List<Player> players;
+	private final List<Player> shuffledPlayers;
 
 	private final Map<Player, Deck> decks;
 	private final Map<Player, Hand> hands;
 
 	private Round round;
 
-	public Game(long seed, Player player1, Player player2, Map<Player, InitialDeck> initialDecks) {
+	public Game(long seed, List<Player> players, Map<Player, InitialDeck> initialDecks) {
 		rand = new Random(seed);
 
-		this.player1 = player1;
-		this.player2 = player2;
-
-		players = Arrays.asList(player1, player2);
+		this.players = new ArrayList<>(players);
 
 		victories = players.stream()
 				.collect(toMap(p -> p, p -> new AtomicInteger(0)));
 		roundCounter = new AtomicInteger(0);
-
-		winner = Optional.empty();
 
 		decks = players.stream()
 				.collect(toMap(p -> p, p -> new Deck()));
@@ -68,18 +57,14 @@ public class Game {
 
 		prepareDecksAndHands(initialDecks);
 
+		shuffledPlayers = new ArrayList<>(players);
+		Collections.shuffle(shuffledPlayers, rand);
+
 		newRound();
 	}
 
 	private void newRound() {
-		round = new Round(players, buildRows(), players.stream()
-				.collect(toMap(p -> p, p -> false)), rand.nextDouble() < 0.5 ? player1 : player2);
-	}
-
-	private Map<Player, List<Row>> buildRows() {
-		return players.stream()
-				.collect(toMap(p -> p, p -> range(0, 3).mapToObj(i -> new Row())
-						.collect(toList())));
+		round = new Round(players, shuffledPlayers.get(roundCounter.get() % 2));
 	}
 
 	private void prepareDecksAndHands(Map<Player, InitialDeck> initialDecks) {
@@ -110,11 +95,7 @@ public class Game {
 					"Player " + round.getCurrentPlayer() + "does not have card " + card + " in his hand");
 		}
 
-		round.getRows()
-				.get(round.getCurrentPlayer())
-				.get(card.getTargetRow() - 1)
-				.getCards()
-				.add(new EngagedCard(card));
+		round.playCard(card);
 
 		if (hands.get(round.getCurrentPlayer())
 				.getCards()
@@ -143,16 +124,21 @@ public class Game {
 					.incrementAndGet();
 		});
 
-		if ((roundCounter.get() == 3) || victories.values()
-				.stream()
-				.anyMatch(v -> v.get() == 2)) {
-			this.winner = roundWinner;
-		} else {
+		if (!gameOver()) {
 			newRound();
 		}
 	}
 
+	public Optional<Player> getWinner() {
+		return victories.entrySet()
+				.stream()
+				.filter(e -> e.getValue()
+						.get() == 2)
+				.map(e -> e.getKey())
+				.findAny();
+	}
+
 	public boolean gameOver() {
-		return winner.isPresent() || (roundCounter.get() == 3);
+		return getWinner().isPresent() || (roundCounter.get() == 3);
 	}
 }

@@ -1,13 +1,12 @@
 package org.mofleury.agwenst.console;
 
+import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.IntStream.iterate;
-import static java.util.stream.IntStream.range;
 
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.Comparator;
-import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -190,7 +189,7 @@ public class ConsoleUI {
 
 	public void displayField() {
 
-		Map<Player, List<Row>> rows = game.getRound()
+		Map<Player, Map<Integer, Row>> rows = game.getRound()
 				.getRows();
 
 		Map<Player, Integer> scores = game.getRound()
@@ -201,19 +200,31 @@ public class ConsoleUI {
 		Player otherPlayer = game.getRound()
 				.getOtherPlayer();
 
-		out.println(playerStatus(otherPlayer));
+		out.println("----------------------------");
 
+		String specialCards = game.getRound()
+				.getSpecialCards()
+				.stream()
+				.map(spc -> formatCard(spc))
+				.collect(joining("\n"));
+
+		out.println(specialCards);
+
+		out.println("----------------------------");
+		out.println(playerStatus(otherPlayer));
 		out.println("----------( " + scores.get(otherPlayer) + " )-------------");
 
-		iterate(Game.ROW_COUNT - 1, i -> i - 1).limit(Game.ROW_COUNT)
+		iterate(Game.ROW_COUNT, i -> i - 1).limit(Game.ROW_COUNT)
 				.forEach(r -> {
 					printRow(otherPlayer, rows, r);
 				});
-		out.println("------------------------------");
 
-		range(0, Game.ROW_COUNT).forEach(r -> {
-			printRow(currentPlayer, rows, r);
-		});
+		out.println("----------------------------");
+
+		iterate(1, i -> i + 1).limit(Game.ROW_COUNT)
+				.forEach(r -> {
+					printRow(currentPlayer, rows, r);
+				});
 
 		out.println("----------( " + scores.get(currentPlayer) + " )-------------");
 
@@ -227,11 +238,26 @@ public class ConsoleUI {
 						.get(p)
 						.getCards()
 						.size()
-				+ ">";
+				+ ">" + (game.getRound()
+						.hasPassed(p) ? " passed" : "");
 	}
 
-	private void printRow(Player player, Map<Player, List<Row>> rows, int r) {
-		out.print("" + (r + 1) + "|");
+	private void printRow(Player player, Map<Player, Map<Integer, Row>> rows, int r) {
+		out.print(" " + r + " |");
+
+		String effects = game.getRound()
+				.getSpecialCards()
+				.stream()
+				.filter(spc -> spc.getTargetRow() == r)
+				.filter(spc -> spc.getEffect()
+						.isPresent())
+				.map(spc -> spc.getEffect()
+						.get()
+						.getLabel())
+				.collect(joining());
+
+		out.print(String.format("%1$1s", effects) + "|");
+
 		rows.get(player)
 				.get(r)
 				.getCards()

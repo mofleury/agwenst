@@ -1,5 +1,6 @@
 package org.mofleury.agwenst;
 
+import static java.util.Arrays.asList;
 import static java.util.stream.Collectors.toMap;
 import static java.util.stream.Stream.of;
 
@@ -35,7 +36,7 @@ public class App {
 
 		Map<Player, InitialDeck> initialDecks = of(player1, player2).collect(toMap(p -> p, p -> defaultDeck));
 
-		return new Game(System.currentTimeMillis(), player1, player2, initialDecks);
+		return new Game(System.currentTimeMillis(), asList(player1, player2), initialDecks);
 
 	}
 }
