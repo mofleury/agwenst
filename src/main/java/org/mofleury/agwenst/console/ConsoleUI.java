@@ -54,6 +54,7 @@ public class ConsoleUI {
 	}
 
 	private static final Comparator<? super Card> HAND_SORTER = Comparator.comparing(Card::getType)
+			.reversed()
 			.thenComparing(Card::getValue)
 			.thenComparing(Comparator.comparingInt(Card::getTargetRow))
 			.thenComparing(Card::getName);
@@ -88,7 +89,8 @@ public class ConsoleUI {
 
 			while (!cancelRequested) {
 
-				console.setPrompt(game.getCurrentPlayer()
+				console.setPrompt(game.getRound()
+						.getCurrentPlayer()
 						.getName() + " > ");
 
 				String input = console.readLine();
@@ -159,7 +161,8 @@ public class ConsoleUI {
 		AtomicInteger index = new AtomicInteger(0);
 
 		return game.getHands()
-				.get(game.getCurrentPlayer())
+				.get(game.getRound()
+						.getCurrentPlayer())
 				.getCards()
 				.stream()
 				.sorted(HAND_SORTER)
@@ -187,27 +190,34 @@ public class ConsoleUI {
 
 	public void displayField() {
 
-		Map<Player, List<Row>> rows = game.getRows();
+		Map<Player, List<Row>> rows = game.getRound()
+				.getRows();
 
-		Map<Player, Integer> scores = game.computeScores();
+		Map<Player, Integer> scores = game.getRound()
+				.computeScores();
 
-		out.println(playerStatus(game.getOtherPlayer()));
+		Player currentPlayer = game.getRound()
+				.getCurrentPlayer();
+		Player otherPlayer = game.getRound()
+				.getOtherPlayer();
 
-		out.println("----------( " + scores.get(game.getOtherPlayer()) + " )-------------");
+		out.println(playerStatus(otherPlayer));
+
+		out.println("----------( " + scores.get(otherPlayer) + " )-------------");
 
 		iterate(Game.ROW_COUNT - 1, i -> i - 1).limit(Game.ROW_COUNT)
 				.forEach(r -> {
-					printRow(game.getOtherPlayer(), rows, r);
+					printRow(otherPlayer, rows, r);
 				});
 		out.println("------------------------------");
 
 		range(0, Game.ROW_COUNT).forEach(r -> {
-			printRow(game.getCurrentPlayer(), rows, r);
+			printRow(currentPlayer, rows, r);
 		});
 
-		out.println("----------( " + scores.get(game.getCurrentPlayer()) + " )-------------");
+		out.println("----------( " + scores.get(currentPlayer) + " )-------------");
 
-		out.println(playerStatus(game.getCurrentPlayer()));
+		out.println(playerStatus(currentPlayer));
 	}
 
 	private String playerStatus(Player p) {

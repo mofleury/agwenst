@@ -9,6 +9,8 @@ import java.util.List;
 import java.util.Optional;
 
 import org.mofleury.agwenst.domain.still.Card;
+import org.mofleury.agwenst.domain.still.CardType;
+import org.mofleury.agwenst.domain.still.Effect;
 import org.mofleury.agwenst.domain.still.InitialDeck;
 
 public class DeckBuilder {
@@ -21,6 +23,7 @@ public class DeckBuilder {
 	public InitialDeck balancedDeck() {
 		List<Card> cards = new ArrayList<>();
 		range(1, 4).forEach(r -> {
+			cards.add(new Card(CardType.SPECIAL, "s" + r, 0, r, Optional.of(Effect.SAP)));
 			range(1, 4).forEach(i -> cards.add(new Card(UNIT, "c1", 1, r, Optional.empty())));
 			range(1, 3).forEach(i -> cards.add(new Card(UNIT, "c2", 2, r, Optional.empty())));
 			range(1, 2).forEach(i -> cards.add(new Card(UNIT, "c3", 3, r, Optional.empty())));

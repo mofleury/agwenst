@@ -7,8 +7,6 @@ import static java.util.stream.IntStream.range;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.Comparator;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -46,10 +44,7 @@ public class Game {
 	private final Map<Player, Deck> decks;
 	private final Map<Player, Hand> hands;
 
-	private final Map<Player, List<Row>> rows;
-
-	private Player currentPlayer;
-	private final Map<Player, Boolean> passed;
+	private Round round;
 
 	public Game(long seed, Player player1, Player player2, Map<Player, InitialDeck> initialDecks) {
 		rand = new Random(seed);
@@ -57,17 +52,13 @@ public class Game {
 		this.player1 = player1;
 		this.player2 = player2;
 
-		currentPlayer = rand.nextDouble() < 0.5 ? player1 : player2;
-
 		players = Arrays.asList(player1, player2);
 
 		victories = players.stream()
 				.collect(toMap(p -> p, p -> new AtomicInteger(0)));
 		roundCounter = new AtomicInteger(0);
-		winner = Optional.empty();
 
-		passed = players.stream()
-				.collect(toMap(p -> p, p -> false));
+		winner = Optional.empty();
 
 		decks = players.stream()
 				.collect(toMap(p -> p, p -> new Deck()));
@@ -77,8 +68,12 @@ public class Game {
 
 		prepareDecksAndHands(initialDecks);
 
-		rows = buildRows();
+		newRound();
+	}
 
+	private void newRound() {
+		round = new Round(players, buildRows(), players.stream()
+				.collect(toMap(p -> p, p -> false)), rand.nextDouble() < 0.5 ? player1 : player2);
 	}
 
 	private Map<Player, List<Row>> buildRows() {
@@ -107,78 +102,41 @@ public class Game {
 	}
 
 	public void playCard(Card card) {
-		boolean found = hands.get(currentPlayer)
+		boolean found = hands.get(round.getCurrentPlayer())
 				.getCards()
 				.remove(card);
 		if (!found) {
-			throw new IllegalStateException("Player " + currentPlayer + "does not have card " + card + " in his hand");
+			throw new IllegalStateException(
+					"Player " + round.getCurrentPlayer() + "does not have card " + card + " in his hand");
 		}
 
-		rows.get(currentPlayer)
+		round.getRows()
+				.get(round.getCurrentPlayer())
 				.get(card.getTargetRow() - 1)
 				.getCards()
 				.add(new EngagedCard(card));
 
-		if (hands.get(currentPlayer)
+		if (hands.get(round.getCurrentPlayer())
 				.getCards()
 				.isEmpty()) {
 			pass();
 		} else {
-			swapPlayerIfNeeded();
-		}
-	}
-
-	private void swapPlayerIfNeeded() {
-		if (passed.get(getOtherPlayer()) == false) {
-			currentPlayer = getOtherPlayer();
-		}
-	}
-
-	public Map<Player, Integer> computeScores() {
-
-		Map<Player, Integer> scores = new HashMap<>();
-		rows.forEach((p, rs) -> {
-			int total = rs.stream()
-					.map(r -> r.getCards()
-							.stream()
-							.mapToInt(EngagedCard::getCurrentValue)
-							.sum())
-					.mapToInt(Integer::intValue)
-					.sum();
-			scores.put(p, total);
-		});
-
-		return scores;
-	}
-
-	public Player getOtherPlayer() {
-		if (currentPlayer == player1) {
-			return player2;
-		} else {
-			return player1;
+			round.swapPlayerIfPossible();
 		}
 	}
 
 	public void pass() {
-		passed.put(currentPlayer, true);
-
-		if (passed.values()
-				.stream()
-				.allMatch(passed -> passed == true)) {
+		round.pass();
+		if (round.hasEnded()) {
 			endRound();
 		}
-
-		swapPlayerIfNeeded();
 	}
 
 	private void endRound() {
 
 		roundCounter.incrementAndGet();
 
-		Optional<Player> roundWinner = computeScores().entrySet()
-				.stream()
-				.max(Comparator.comparing(e -> e.getValue()))
-				.map(e -> e.getKey());
+		Optional<Player> roundWinner = round.findWinner();
 
 		roundWinner.ifPresent(p -> {
 			victories.get(p)
@@ -190,10 +148,7 @@ public class Game {
 				.anyMatch(v -> v.get() == 2)) {
 			this.winner = roundWinner;
 		} else {
-			rows.clear();
-			rows.putAll(buildRows());
-
-			passed.replaceAll((p, b) -> false);
+			newRound();
 		}
 	}
 
