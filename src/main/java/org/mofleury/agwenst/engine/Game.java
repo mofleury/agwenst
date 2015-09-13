@@ -106,15 +106,16 @@ public class Game {
 		});
 	}
 
-	public void playCard(Player player, Card card, int targetRow) {
-		boolean found = hands.get(player)
+	public void playCard(Card card) {
+		boolean found = hands.get(currentPlayer)
 				.getCards()
 				.remove(card);
 		if (!found) {
-			throw new IllegalStateException("Player " + player + "does not have card " + card + " in his hand");
+			throw new IllegalStateException("Player " + currentPlayer + "does not have card " + card + " in his hand");
 		}
-		rows.get(player)
-				.get(targetRow)
+
+		rows.get(currentPlayer)
+				.get(card.getTargetRow() - 1)
 				.getCards()
 				.add(new EngagedCard(card));
 

@@ -1,7 +1,6 @@
 package org.mofleury.agwenst.console;
 
 import java.io.IOException;
-import java.util.Arrays;
 import java.util.Optional;
 
 import jline.console.ConsoleReader;
@@ -38,26 +37,21 @@ public enum Command {
 			ui.displayHand();
 		}
 	},
-	PLAY_CARD("play", "<card index> <target row>", "Plays a card", 2) {
+	PLAY_CARD("play", "<card index>", "Plays a card", 1) {
 
 		@Override
 		public void doExecute(ConsoleReader console, ConsoleUI ui, String[] arguments) throws IOException {
 
-			if (arguments.length != 2) {
-				console.println("Cannot understand arguments " + Arrays.toString(arguments));
-				return;
-			}
 			int cardIndex = Integer.valueOf(arguments[0]);
-			int targetRow = Integer.valueOf(arguments[1]);
 
 			try {
-				ui.playCard(cardIndex, targetRow - 1);
+				ui.playCard(cardIndex);
 			} catch (IndexOutOfBoundsException e) {
 				console.println("invalid row or card id");
 			}
 		}
 	},
-	PASS("pass", "", "Pass for this round", 0){
+	PASS("pass", "", "Pass for this round", 0) {
 		@Override
 		void doExecute(ConsoleReader console, ConsoleUI ui, String[] arguments) throws IOException {
 			ui.pass();

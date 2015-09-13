@@ -53,7 +53,9 @@ public class ConsoleUI {
 		}
 	}
 
-	private static final Comparator<? super Card> HAND_SORTER = Comparator.comparingInt(Card::getValue)
+	private static final Comparator<? super Card> HAND_SORTER = Comparator.comparing(Card::getType)
+			.thenComparing(Card::getValue)
+			.thenComparing(Comparator.comparingInt(Card::getTargetRow))
 			.thenComparing(Card::getName);
 
 	private final ConsoleReader console;
@@ -136,9 +138,21 @@ public class ConsoleUI {
 	public void displayHand() {
 		out.println("-------------------------");
 		indexedPlayerHand().forEach((i, c) -> {
-			out.println(i + " - " + c.getName() + "(" + c.getValue() + ")");
+			out.println(i + " - " + formatCard(c));
 		});
 		out.println("-------------------------");
+	}
+
+	private String formatCard(Card c) {
+		switch (c.getType()) {
+		case SPECIAL:
+			return "(" + c.getTargetRow() + ", " + c.getEffect()
+					.map(e -> e.getLabel())
+					.orElse("?") + ") " + c.getName();
+		case UNIT:
+			return "(" + c.getTargetRow() + ", " + c.getValue() + ") " + c.getName();
+		}
+		throw new IllegalArgumentException("Unknown card type " + c.getType());
 	}
 
 	private Map<Integer, Card> indexedPlayerHand() {
@@ -152,15 +166,13 @@ public class ConsoleUI {
 				.collect(Collectors.toMap(c -> index.incrementAndGet(), c -> c));
 	}
 
-	public void playCard(int cardIndex, int targetRow) throws IndexOutOfBoundsException {
-		if ((targetRow < 0) || (targetRow >= Game.ROW_COUNT)) {
-			throw new IndexOutOfBoundsException("Not a valid row " + targetRow);
-		}
+	public void playCard(int cardIndex) throws IndexOutOfBoundsException {
+
 		Card card = indexedPlayerHand().get(cardIndex);
 		if (card == null) {
 			throw new IndexOutOfBoundsException("No card at index " + cardIndex);
 		}
-		game.playCard(game.getCurrentPlayer(), card, targetRow);
+		game.playCard(card);
 
 		swapPlayers();
 	}
